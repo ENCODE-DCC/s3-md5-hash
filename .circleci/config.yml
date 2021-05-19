@@ -25,8 +25,15 @@ jobs:
     <<: *py38
     steps:
       - checkout
+      - restore_cache:
+          key: lint
       - run_tox:
           toxenv: lint
+      - save_cache:
+          key: lint
+          paths:
+            - .tox
+            - ~/.cache/pre-commit
 
   unit_tests:
     <<: *py38
