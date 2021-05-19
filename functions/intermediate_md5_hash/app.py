@@ -1,42 +1,39 @@
-from datetime import datetime
-from random import randint
+import pickle
 from typing import TYPE_CHECKING, Any, Dict
-from uuid import uuid4
+
+import boto3
 
 if TYPE_CHECKING:
     from aws_lambda_typing import Context
+    from mypy_boto3_s3.type_defs import GetObjectOutputTypeDef
+
+CHUNKSIZE = 8192
+MILLISECONDS_REMAINING_THRESHOLD = 1000 * 10
 
 
-def lambda_handler(event: Dict[str, Any], context: Context) -> Dict[str, Any]:
-    """Sample Lambda function which mocks the operation of selling a random number
-    of shares for a stock.
+def _get_object(bucket: str, key: str, start_byte: int) -> "GetObjectOutputTypeDef":
+    client = boto3.client("s3")
+    return client.get_object(Bucket=bucket, Key=key, Range=f"{start_byte}-")
 
-    For demonstration purposes, this Lambda function does not actually perform any
-    actual transactions. It simply returns a mocked result.
 
-    Parameters
-    ----------
-    event: dict, required
-        Input event to the Lambda function
-
-    context: object, required
-        Lambda Context runtime methods and attributes
-
-    Returns
-    ------
-        dict: Object containing details of the stock selling transaction
-    """
-    # Get the price of the stock provided as input
-    stock_price = event["stock_price"]
-    # Mocked result of a stock selling transaction
-    transaction_result = {
-        "id": str(uuid4()),  # Unique ID for the transaction
-        "price": str(stock_price),  # Price of each share
-        "type": "sell",  # Type of transaction (buy/sell)
-        # Number of shares bought/sold
-        # We are mocking this as a random integer between 1 and 10)
-        "qty": str(randint(1, 10)),
-        # Timestamp of the when the transaction was completed
-        "timestamp": datetime.now().isoformat(),
+def lambda_handler(event: Dict[str, Any], context: "Context") -> Dict[str, Any]:
+    bucket = event["bucket"]
+    key = event["key"]
+    start_byte = event["start_byte"]
+    object = _get_object(bucket=bucket, key=key, start_byte=start_byte)
+    md5_hash = pickle.loads(event["hash_object"])
+    for i, chunk in enumerate(object["Body"].iter_chunks(CHUNKSIZE)):
+        md5_hash.update(chunk)
+        remaining = context.get_remaining_time_in_millis()
+        if remaining < MILLISECONDS_REMAINING_THRESHOLD:
+            return {
+                "start_byte": i * CHUNKSIZE + start_byte,
+                "hash_object": pickle.dumps(md5_hash),
+                "bucket": bucket,
+                "key": key,
+            }
+    return {
+        "md5_hash": md5_hash.hexdigest(),
+        "bucket": bucket,
+        "key": key,
     }
-    return transaction_result

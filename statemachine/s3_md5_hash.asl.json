@@ -5,9 +5,9 @@
     "Continue Hashing or Update Object Tagging": {
       "Choices": [
         {
-          "BooleanEquals": true,
+          "IsPresent": true,
           "Next": "PutObjectTagging",
-          "Variable": "$.hash_completed"
+          "Variable": "$.md5_hash"
         }
       ],
       "Default": "Intermediate MD5 Hash",
