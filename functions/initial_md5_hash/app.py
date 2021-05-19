@@ -36,7 +36,7 @@ def lambda_handler(event: Dict[str, Any], context: "Context") -> Dict[str, Any]:
         remaining = context.get_remaining_time_in_millis()
         if remaining < MILLISECONDS_REMAINING_THRESHOLD:
             return {
-                "start_byte": i * CHUNKSIZE,
+                "start_byte": (i + 1) * CHUNKSIZE,
                 "hash_object": pickle.dumps(md5_hash),
                 "bucket": bucket,
                 "key": key,

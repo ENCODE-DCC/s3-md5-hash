@@ -72,4 +72,5 @@ def test_initial_md5_hash_incomplete_hash(
     hash_object = pickle.loads(result["hash_object"])
     assert result["bucket"] == "foo"
     assert result["key"] == "bar.baz"
+    assert result["start_byte"] == app.CHUNKSIZE
     assert hash_object.hexdigest() == "acbd18db4cc2f85cedef654fccc4a4d8"
