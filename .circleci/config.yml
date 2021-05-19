@@ -5,16 +5,6 @@ py38: &py38
   docker:
     - image: cimg/python:3.8.9
 
-cache_tox_envs: &cache_tox_envs
-  save_cache:
-    key: >-
-      {{ checksum "tox.ini" }}
-      {{ checksum "functions/initial_md5_hash/requirements.txt" }}
-      {{ checksum "functions/intermediate_md5_hash/requirements.txt" }}
-      {{ checksum "functions/put_object_tagging/requirements.txt" }}
-    paths:
-      - .tox
-
 commands:
   run_tox:
     description: Install and run tox with a given environment
@@ -37,7 +27,6 @@ jobs:
       - checkout
       - run_tox:
           toxenv: lint
-      - *cache_tox_envs
 
   unit_tests:
     <<: *py38
@@ -46,7 +35,6 @@ jobs:
       - run_tox:
           toxenv: py38
           extra_args: -k unit
-      - *cache_tox_envs
 
   integration_tests:
     <<: *py38
@@ -55,7 +43,6 @@ jobs:
       - run_tox:
           toxenv: py38
           extra_args: -k integration
-      - *cache_tox_envs
 
   coverage_report:
     <<: *py38
@@ -63,7 +50,6 @@ jobs:
       - checkout
       - run_tox:
           toxenv: coverage-report
-      - *cache_tox_envs
 
 workflows:
   version: 2
