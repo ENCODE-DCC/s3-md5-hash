@@ -65,22 +65,20 @@ To simplify troubleshooting, SAM CLI has a command called `sam logs`. `sam logs`
 `NOTE`: This command works for all AWS Lambda functions; not just the ones you deploy using SAM.
 
 ```bash
-s3-md5-hash$ sam logs -n StockCheckerFunction --stack-name s3-md5-hash --tail
+s3-md5-hash$ sam logs -n MyFunction --stack-name s3-md5-hash --tail
 ```
 
 You can find more information and examples about filtering Lambda function logs in the [SAM CLI Documentation](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-sam-cli-logging.html).
 
 ## Tests
 
-Tests are defined in the `tests` folder in this project. Use PIP to install the test dependencies and run tests.
-
 ```bash
-s3-md5-hash$ pip install -r tests/requirements.txt --user
-# unit test
-s3-md5-hash$ python -m pytest tests/unit -v
-# integration test, requiring deploying the stack first.
+s3-md5-hash$ pip install -r requirements-dev.txt
+#  Run unit tests
+s3-md5-hash$ tox -e py38 -- -k "unit"
+# integration test, requires deploying the stack first.
 # Create the env variable AWS_SAM_STACK_NAME with the name of the stack we are testing
-s3-md5-hash$ AWS_SAM_STACK_NAME=<stack-name> python -m pytest tests/integration -v
+s3-md5-hash$ AWS_SAM_STACK_NAME=<stack-name> tox -e py38 -- -k "integration"
 ```
 
 ## Cleanup
@@ -90,9 +88,3 @@ To delete the sample application that you created, use the AWS CLI. Assuming you
 ```bash
 aws cloudformation delete-stack --stack-name s3-md5-hash
 ```
-
-## Resources
-
-See the [AWS SAM developer guide](https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/what-is-sam.html) for an introduction to SAM specification, the SAM CLI, and serverless application concepts.
-
-Next, you can use AWS Serverless Application Repository to deploy ready to use Apps that go beyond hello world samples and learn how authors developed their applications: [AWS Serverless Application Repository main page](https://aws.amazon.com/serverless/serverlessrepo/)

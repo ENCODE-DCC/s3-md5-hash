@@ -1,30 +1,34 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 Transform: AWS::Serverless-2016-10-31
-Description: >
-  s3-md5-hash
+Description: SAM Template for s3-md5-hash
 
-  Sample SAM Template for s3-md5-hash
+Parameters:
+  eventSourceBucket:
+    Description: Bucket for which to calculate file md5sums
+    Type: String
 
 Resources:
   S3MD5HashStateMachine:
-    Type: AWS::Serverless::StateMachine # More info about State Machine Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+    # More info about State Machine Resource
+    # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+    Type: AWS::Serverless::StateMachine
     Properties:
       DefinitionUri: statemachine/s3_md5_hash.asl.json
       DefinitionSubstitutions:
         InitialMD5HashArn: !GetAtt InitialMD5Hash.Arn
         IntermediateMD5HashArn: !GetAtt IntermediateMD5Hash.Arn
         PutObjectTaggingArn: !GetAtt PutObjectTagging.Arn
-      # Events:
-      #   EBRule:
-      #     Type: EventBridgeRule
-      #     Properties:
-      #       Pattern:
-      #         source: aws.s3
-      #         detail:
-      #           state:
-      #             - terminated
-      Policies: # Find out more about SAM policy templates: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+      Events:
+        EBRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern: {source: [aws.s3], detail-type: [AWS API Call via CloudTrail], detail: {
+                eventSource: [s3.amazonaws.com], eventName: [CompleteMultipartUpload, PutObject],
+                requestParameters: {bucketName: [!Ref eventSourceBucket]}}}
+      # Find out more about SAM policy templates:
+      # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+      Policies:
         - LambdaInvokePolicy:
             FunctionName: !Ref InitialMD5Hash
         - LambdaInvokePolicy:
@@ -33,7 +37,9 @@ Resources:
             FunctionName: !Ref PutObjectTagging
 
   InitialMD5Hash:
-    Type: AWS::Serverless::Function # More info about Function Resource: https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
+    # More info about Function Resource:
+    # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
+    Type: AWS::Serverless::Function
     Properties:
       CodeUri: functions/initial_md5_hash/
       Handler: app.lambda_handler
@@ -53,10 +59,60 @@ Resources:
       Handler: app.lambda_handler
       Runtime: python3.8
 
+  # Need separate bucket for CloudTrail logs. Reusing trailed bucket is not recommended
+  # https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html
+  CloudTrailBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: s3-md5-hash-cloudtrail
+
+  CloudTrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: CloudTrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !Sub |-
+              arn:aws:s3:::${CloudTrailBucket}
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub |-
+              arn:aws:s3:::${CloudTrailBucket}/AWSLogs/${AWS::AccountId}/*
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+
+  BucketTrail:
+    DependsOn:
+      - CloudTrailBucketPolicy
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      EventSelectors:
+        - DataResources:
+            - Type: AWS::S3::Object
+              Values:
+                - !Sub arn:aws:s3:::${eventSourceBucket}/
+          IncludeManagementEvents: false
+          ReadWriteType: WriteOnly
+      IsLogging: true
+      S3BucketName: !Ref CloudTrailBucket
+      TrailName: s3-md5-hash-trail
+
 Outputs:
   S3MD5HashStateMachineArn:
     Description: Stock Trading State machine ARN
     Value: !Ref S3MD5HashStateMachine
   S3MD5HashStateMachineRoleArn:
-    Description: IAM Role created for Stock Trading State machine based on the specified SAM Policy Templates
+    Description: IAM Role created for the state machine based on the specified SAM Policy
+      Templates
     Value: !GetAtt S3MD5HashStateMachineRole.Arn

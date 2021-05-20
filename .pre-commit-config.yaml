@@ -54,4 +54,4 @@ repos:
     rev: 0.0.11
     hooks:
       - id: yamlfmt
-        args: [--mapping, '2', --sequence, '4', --offset, '2']
+        args: [--mapping, '2', --sequence, '4', --offset, '2', --width, '88']
