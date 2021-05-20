@@ -107,7 +107,7 @@ Resources:
           ReadWriteType: WriteOnly
       IsLogging: true
       S3BucketName: !Ref CloudTrailBucket
-      TrailName: s3-md5-hash-trail
+      TrailName: !Sub ${eventSourceBucket}-trail
 
 Outputs:
   S3MD5HashStateMachineArn:
