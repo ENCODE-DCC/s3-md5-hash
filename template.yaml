@@ -49,9 +49,7 @@ Resources:
         - Effect: Allow
           Action:
             - s3:GetObject
-            - s3:GetObjectTagging
           Resource:
-            - !Sub arn:aws:s3:::${eventSourceBucket}
             - !Sub arn:aws:s3:::${eventSourceBucket}/*
 
   IntermediateMD5Hash:
@@ -65,9 +63,7 @@ Resources:
         - Effect: Allow
           Action:
             - s3:GetObject
-            - s3:GetObjectTagging
           Resource:
-            - !Sub arn:aws:s3:::${eventSourceBucket}
             - !Sub arn:aws:s3:::${eventSourceBucket}/*
 
   PutObjectTagging:
@@ -83,7 +79,6 @@ Resources:
             - s3:GetObjectTagging
             - s3:PutObjectTagging
           Resource:
-            - !Sub arn:aws:s3:::${eventSourceBucket}
             - !Sub arn:aws:s3:::${eventSourceBucket}/*
 
   # Need separate bucket for CloudTrail logs. Reusing trailed bucket is not recommended
