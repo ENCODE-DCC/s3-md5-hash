@@ -60,11 +60,12 @@ Resources:
       Runtime: python3.8
 
   # Need separate bucket for CloudTrail logs. Reusing trailed bucket is not recommended
+  # Cloudformation cannot delete non-empty bucket, set policies to Retain, wil require manual deletion
   # https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html
   CloudTrailBucket:
     Type: AWS::S3::Bucket
-    Properties:
-      BucketName: s3-md5-hash-cloudtrail
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
 
   CloudTrailBucketPolicy:
     Type: AWS::S3::BucketPolicy

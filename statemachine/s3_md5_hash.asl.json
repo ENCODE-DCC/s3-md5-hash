@@ -45,7 +45,7 @@
     },
     "PutObjectTagging": {
       "End": true,
-      "Resource": "${PutObjectTaggingFunctionArn}",
+      "Resource": "${PutObjectTaggingArn}",
       "Retry": [
         {
           "BackoffRate": 1,
