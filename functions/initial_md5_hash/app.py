@@ -4,6 +4,7 @@ from urllib.parse import unquote_plus
 
 import boto3
 import rehash
+from policyuniverse.arn import ARN
 
 if TYPE_CHECKING:
     from aws_lambda_typing import Context
@@ -19,8 +20,13 @@ def _get_object(bucket: str, key: str) -> "GetObjectOutputTypeDef":
 
 
 def lambda_handler(event: Dict[str, Any], context: "Context") -> Dict[str, Any]:
-    bucket = event["detail"]["requestParameters"]["bucketName"]
-    key = unquote_plus(event["detail"]["requestParameters"]["key"], encoding="utf-8")
+    resources = event["detail"]["resources"]
+    object_resource_name = ARN(
+        [i for i in resources if i["type"] == "AWS::S3::Object"][0]["ARN"]
+    ).name
+    bucket, *key_parts = object_resource_name.split("/")
+    key = "/".join(key_parts)
+    key = unquote_plus(key, encoding="utf-8")
     object = _get_object(bucket=bucket, key=key)
     etag = object["ETag"].strip('"')
     # Fast path, ETag is the md5sum

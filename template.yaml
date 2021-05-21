@@ -23,9 +23,24 @@ Resources:
         EBRule:
           Type: EventBridgeRule
           Properties:
-            Pattern: {source: [aws.s3], detail-type: [AWS API Call via CloudTrail], detail: {
-                eventSource: [s3.amazonaws.com], eventName: [CompleteMultipartUpload, PutObject],
-                requestParameters: {bucketName: [!Ref eventSourceBucket]}}}
+            Pattern:
+              source:
+                - aws.s3
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventSource:
+                  - s3.amazonaws.com
+                eventName:
+                  - CompleteMultipartUpload
+                  - PutObject
+                resources:
+                  ARN:
+                    - !Sub arn:aws:s3:::${eventSourceBucket}
+                  type:
+                    - AWS::S3::Bucket
+                  accountId:
+                    - !Ref AWS::AccountId
       # Find out more about SAM policy templates:
       # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
       Policies:

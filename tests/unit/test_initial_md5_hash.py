@@ -11,10 +11,14 @@ from functions.initial_md5_hash import app
 def event() -> Dict[str, Any]:
     return {
         "detail": {
-            "requestParameters": {
-                "bucketName": "foo",
-                "key": "bar.baz",
-            }
+            "resources": [
+                {"type": "AWS::S3::Object", "ARN": "arn:aws:s3:::foo/bar.baz"},
+                {
+                    "accountId": "123",
+                    "type": "AWS::S3::Bucket",
+                    "ARN": "arn:aws:s3:::foo",
+                },
+            ],
         }
     }
 
