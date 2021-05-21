@@ -44,8 +44,10 @@ Resources:
       CodeUri: functions/initial_md5_hash/
       Handler: app.lambda_handler
       Runtime: python3.8
+      Timeout: 900
       Policies:
-        - Statement:
+        - Version: '2012-10-17'
+          Statement:
             - Effect: Allow
               Action: s3:GetObject
               Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
@@ -56,8 +58,10 @@ Resources:
       CodeUri: functions/intermediate_md5_hash/
       Handler: app.lambda_handler
       Runtime: python3.8
+      Timeout: 900
       Policies:
-        - Statement:
+        - Version: '2012-10-17'
+          Statement:
             - Effect: Allow
               Action: s3:GetObject
               Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
@@ -69,8 +73,10 @@ Resources:
       CodeUri: functions/put_object_tagging/
       Handler: app.lambda_handler
       Runtime: python3.8
+      Timeout: 900
       Policies:
-        - Statement:
+        - Version: '2012-10-17'
+          Statement:
             - Effect: Allow
               Action:
                 - s3:GetObjectTagging
