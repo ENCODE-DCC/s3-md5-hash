@@ -44,11 +44,11 @@ Resources:
       CodeUri: functions/initial_md5_hash/
       Handler: app.lambda_handler
       Runtime: python3.8
-    Policies:
-      - Statement:
-          - Effect: Allow
-            Action: s3:GetObject
-            Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
 
   IntermediateMD5Hash:
     Type: AWS::Serverless::Function
@@ -56,11 +56,11 @@ Resources:
       CodeUri: functions/intermediate_md5_hash/
       Handler: app.lambda_handler
       Runtime: python3.8
-    Policies:
-      - Statement:
-          - Effect: Allow
-            Action: s3:GetObject
-            Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
 
 
   PutObjectTagging:
@@ -69,13 +69,13 @@ Resources:
       CodeUri: functions/put_object_tagging/
       Handler: app.lambda_handler
       Runtime: python3.8
-    Policies:
-      - Statement:
-          - Effect: Allow
-            Action:
-              - s3:GetObjectTagging
-              - s3:PutObjectTagging
-            Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
+      Policies:
+        - Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObjectTagging
+                - s3:PutObjectTagging
+              Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
 
   # Need separate bucket for CloudTrail logs. Reusing trailed bucket is not recommended
   # Cloudformation cannot delete non-empty bucket, set policies to Retain, wil require manual deletion
