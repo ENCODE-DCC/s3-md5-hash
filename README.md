@@ -51,8 +51,8 @@ s3-md5-hash$ AWS_SAM_STACK_NAME=<stack-name> tox -e py38 -- -k "integration"
 
 ## Cleanup
 
-To delete the sample application that you created, use the AWS CLI. Assuming you used your project name for the stack name, you can run the following:
+First, delete all objects in the CloudTrail bucket. it should have a name of the form `${STACK_NAME}-cloudtrailbucket-XXXX`. Then, delete the CloudFormation stack:
 
 ```bash
-aws cloudformation delete-stack --stack-name s3-md5-hash
+aws cloudformation delete-stack --stack-name $STACK_NAME --region $REGION --profile $PROFILE
 ```
