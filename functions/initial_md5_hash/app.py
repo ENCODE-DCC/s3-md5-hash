@@ -14,7 +14,7 @@ CHUNKSIZE = 8192
 MILLISECONDS_REMAINING_THRESHOLD = 1000 * 10
 
 
-def _get_object(bucket: str, key: str) -> "GetObjectOutputTypeDef":
+def _get_object(bucket: str, key: str) -> "GetObjectOutputTypeDef":  # pragma: no cover
     client = boto3.client("s3")
     return client.get_object(Bucket=bucket, Key=key)
 
@@ -43,7 +43,7 @@ def lambda_handler(event: Dict[str, Any], context: "Context") -> Dict[str, Any]:
         if remaining < MILLISECONDS_REMAINING_THRESHOLD:
             return {
                 "start_byte": (i + 1) * CHUNKSIZE,
-                "hash_object": pickle.dumps(md5_hash),
+                "hash_object": pickle.dumps(md5_hash).hex(),
                 "bucket": bucket,
                 "key": key,
             }

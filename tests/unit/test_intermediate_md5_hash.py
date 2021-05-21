@@ -14,7 +14,7 @@ def event() -> Dict[str, Any]:
     md5_hash.update(b"foo")
     return {
         "start_byte": 100,
-        "hash_object": pickle.dumps(md5_hash),
+        "hash_object": pickle.dumps(md5_hash).hex(),
         "bucket": "foo",
         "key": "bar.baz",
     }
@@ -54,7 +54,7 @@ def test_intermediate_md5_hash_incomplete_hash(
     context = mocker.Mock()
     context.get_remaining_time_in_millis.return_value = 1000
     result = app.lambda_handler(event, context)
-    hash_object = pickle.loads(result["hash_object"])
+    hash_object = pickle.loads(bytes.fromhex(result["hash_object"]))
     assert result["bucket"] == "foo"
     assert result["key"] == "bar.baz"
     assert result["start_byte"] == 100 + app.CHUNKSIZE

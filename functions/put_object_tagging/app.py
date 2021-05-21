@@ -11,17 +11,17 @@ if TYPE_CHECKING:
 
 class TaggingClient:
     @cached_property
-    def client(self) -> "S3Client":
+    def client(self) -> "S3Client":  # pragma: no cover
         return boto3.client("s3")
 
     def get_object_tagging(
         self, bucket: str, key: str
-    ) -> "GetObjectTaggingOutputTypeDef":
+    ) -> "GetObjectTaggingOutputTypeDef":  # pragma: no cover
         return self.client.get_object_tagging(Bucket=bucket, Key=key)
 
     def put_object_tagging(
         self, bucket: str, key: str, tagging: "TaggingTypeDef"
-    ) -> None:
+    ) -> None:  # pragma: no cover
         self.client.put_object_tagging(Bucket=bucket, Key=key, Tagging=tagging)
 
 

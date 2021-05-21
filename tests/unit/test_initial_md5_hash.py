@@ -73,7 +73,7 @@ def test_initial_md5_hash_incomplete_hash(
     context = mocker.Mock()
     context.get_remaining_time_in_millis.return_value = 1000
     result = app.lambda_handler(event, context)
-    hash_object = pickle.loads(result["hash_object"])
+    hash_object = pickle.loads(bytes.fromhex(result["hash_object"]))
     assert result["bucket"] == "foo"
     assert result["key"] == "bar.baz"
     assert result["start_byte"] == app.CHUNKSIZE
