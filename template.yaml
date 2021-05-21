@@ -37,10 +37,6 @@ Resources:
                 resources:
                   ARN:
                     - !Sub arn:aws:s3:::${eventSourceBucket}
-                  type:
-                    - AWS::S3::Bucket
-                  accountId:
-                    - !Ref AWS::AccountId
       # Find out more about SAM policy templates:
       # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
       Policies:
