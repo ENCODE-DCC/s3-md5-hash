@@ -15,7 +15,7 @@ def _get_object(
     bucket: str, key: str, start_byte: int
 ) -> "GetObjectOutputTypeDef":  # pragma: no cover
     client = boto3.client("s3")
-    return client.get_object(Bucket=bucket, Key=key, Range=f"{start_byte}-")
+    return client.get_object(Bucket=bucket, Key=key, Range=f"bytes={start_byte}-")
 
 
 def lambda_handler(event: Dict[str, Any], context: "Context") -> Dict[str, Any]:
