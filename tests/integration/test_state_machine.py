@@ -59,6 +59,7 @@ def key() -> str:
     return "key"
 
 
+@pytest.mark.skip("Requires deploying stack first which is not trivial in CircleCI")
 def test_state_machine(bucket: str, key: str, state_machine_arn: str) -> None:
     client = boto3.client("stepfunctions")
     response = client.start_execution(

@@ -42,6 +42,7 @@ repos:
       - id: trailing-whitespace
       - id: end-of-file-fixer
       - id: debug-statements
+      - id: check-toml
       - id: check-yaml
         exclude: template\.yaml
       - id: check-json
@@ -55,3 +56,10 @@ repos:
     hooks:
       - id: yamlfmt
         args: [--mapping, '2', --sequence, '4', --offset, '2', --width, '88']
+
+  - repo: https://github.com/macisamuele/language-formatters-pre-commit-hooks
+    rev: v2.0.0
+    hooks:
+      - id: pretty-format-toml
+        args:
+          - --autofix
