@@ -1,4 +1,5 @@
 import pickle
+import re
 from typing import TYPE_CHECKING, Any, Dict
 from urllib.parse import unquote_plus
 
@@ -30,7 +31,7 @@ def lambda_handler(event: Dict[str, Any], context: "Context") -> Dict[str, Any]:
     object = _get_object(bucket=bucket, key=key)
     etag = object["ETag"].strip('"')
     # Fast path, ETag is the md5sum
-    if len(etag) == 32 and "-" not in etag:
+    if re.match(r"^[a-f0-9]{32}$", etag) is not None:
         return {
             "md5_hash": etag,
             "bucket": bucket,
