@@ -1,0 +1,62 @@
+{
+  "Comment": "A state machine that computes MD5 hashes of S3 objects.",
+  "StartAt": "Initial MD5 Hash",
+  "States": {
+    "Continue Hashing or Update Object Tagging": {
+      "Choices": [
+        {
+          "IsPresent": true,
+          "Next": "PutObjectTagging",
+          "Variable": "$.md5_hash"
+        }
+      ],
+      "Default": "Intermediate MD5 Hash",
+      "Type": "Choice"
+    },
+    "Initial MD5 Hash": {
+      "Next": "Continue Hashing or Update Object Tagging",
+      "Resource": "${InitialMD5HashArn}",
+      "Retry": [
+        {
+          "BackoffRate": 1,
+          "ErrorEquals": [
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3
+        }
+      ],
+      "Type": "Task"
+    },
+    "Intermediate MD5 Hash": {
+      "Next": "Continue Hashing or Update Object Tagging",
+      "Resource": "${IntermediateMD5HashArn}",
+      "Retry": [
+        {
+          "BackoffRate": 1,
+          "ErrorEquals": [
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3
+        }
+      ],
+      "Type": "Task"
+    },
+    "PutObjectTagging": {
+      "End": true,
+      "Resource": "${PutObjectTaggingArn}",
+      "Retry": [
+        {
+          "BackoffRate": 1,
+          "ErrorEquals": [
+            "States.TaskFailed"
+          ],
+          "IntervalSeconds": 2,
+          "MaxAttempts": 3
+        }
+      ],
+      "Type": "Task"
+    }
+  }
+}

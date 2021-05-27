@@ -1,0 +1,67 @@
+---
+version: 2.1
+
+py38: &py38
+  docker:
+    - image: cimg/python:3.8.9
+
+commands:
+  run_tox:
+    description: Install and run tox with a given environment
+    parameters:
+      toxenv:
+        description: The name of the environment as per tox.ini, e.g. py38 or lint
+        type: string
+      extra_args:
+        description: Extra arguments that are consumed only when running pytest
+        type: string
+        default: ''
+    steps:
+      - run: pip install tox
+      - run: tox -e << parameters.toxenv >> -- << parameters.extra_args >>
+
+jobs:
+  lint:
+    <<: *py38
+    steps:
+      - checkout
+      - restore_cache:
+          key: lint
+      - run_tox:
+          toxenv: lint
+      - save_cache:
+          key: lint
+          paths:
+            - .tox
+            - ~/.cache/pre-commit
+
+  unit_tests:
+    <<: *py38
+    steps:
+      - checkout
+      - run_tox:
+          toxenv: py38
+          extra_args: -k unit
+
+  integration_tests:
+    <<: *py38
+    steps:
+      - checkout
+      - run_tox:
+          toxenv: py38
+          extra_args: -k integration
+
+  coverage_report:
+    <<: *py38
+    steps:
+      - checkout
+      - run_tox:
+          toxenv: coverage-report
+
+workflows:
+  version: 2
+  build_workflow:
+    jobs:
+      - lint
+      - coverage_report
+      - unit_tests

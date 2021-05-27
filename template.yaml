@@ -1,0 +1,154 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: SAM Template for s3-md5-hash
+
+Parameters:
+  eventSourceBucket:
+    Description: Bucket for which to calculate file md5sums
+    Type: String
+
+Resources:
+  S3MD5HashStateMachine:
+    # More info about State Machine Resource
+    # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-statemachine.html
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: statemachine/s3_md5_hash.asl.json
+      DefinitionSubstitutions:
+        InitialMD5HashArn: !GetAtt InitialMD5Hash.Arn
+        IntermediateMD5HashArn: !GetAtt IntermediateMD5Hash.Arn
+        PutObjectTaggingArn: !GetAtt PutObjectTagging.Arn
+      Events:
+        EBRule:
+          Type: EventBridgeRule
+          Properties:
+            Pattern:
+              source:
+                - aws.s3
+              detail-type:
+                - AWS API Call via CloudTrail
+              detail:
+                eventSource:
+                  - s3.amazonaws.com
+                eventName:
+                  - CompleteMultipartUpload
+                  - PutObject
+                resources:
+                  ARN:
+                    - !Sub arn:aws:s3:::${eventSourceBucket}
+      # Find out more about SAM policy templates:
+      # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/serverless-policy-templates.html
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref InitialMD5Hash
+        - LambdaInvokePolicy:
+            FunctionName: !Ref IntermediateMD5Hash
+        - LambdaInvokePolicy:
+            FunctionName: !Ref PutObjectTagging
+
+  InitialMD5Hash:
+    # More info about Function Resource:
+    # https://docs.aws.amazon.com/serverless-application-model/latest/developerguide/sam-resource-function.html
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/initial_md5_hash/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Timeout: 900
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
+
+  IntermediateMD5Hash:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/intermediate_md5_hash/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Timeout: 900
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action: s3:GetObject
+              Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
+
+
+  PutObjectTagging:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: functions/put_object_tagging/
+      Handler: app.lambda_handler
+      Runtime: python3.8
+      Timeout: 900
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Effect: Allow
+              Action:
+                - s3:GetObjectTagging
+                - s3:PutObjectTagging
+              Resource: !Sub arn:aws:s3:::${eventSourceBucket}/*
+
+  # Need separate bucket for CloudTrail logs. Reusing trailed bucket is not recommended
+  # Cloudformation cannot delete non-empty bucket, set policies to Retain, wil require manual deletion
+  # https://docs.aws.amazon.com/awscloudtrail/latest/userguide/logging-data-events-with-cloudtrail.html
+  CloudTrailBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+    UpdateReplacePolicy: Retain
+
+  CloudTrailBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket:
+        Ref: CloudTrailBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: AWSCloudTrailAclCheck
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:GetBucketAcl
+            Resource: !Sub |-
+              arn:aws:s3:::${CloudTrailBucket}
+          - Sid: AWSCloudTrailWrite
+            Effect: Allow
+            Principal:
+              Service: cloudtrail.amazonaws.com
+            Action: s3:PutObject
+            Resource: !Sub |-
+              arn:aws:s3:::${CloudTrailBucket}/AWSLogs/${AWS::AccountId}/*
+            Condition:
+              StringEquals:
+                s3:x-amz-acl: bucket-owner-full-control
+
+  BucketTrail:
+    DependsOn:
+      - CloudTrailBucketPolicy
+    Type: AWS::CloudTrail::Trail
+    Properties:
+      EventSelectors:
+        - DataResources:
+            - Type: AWS::S3::Object
+              Values:
+                - !Sub arn:aws:s3:::${eventSourceBucket}/
+          IncludeManagementEvents: false
+          ReadWriteType: WriteOnly
+      IsLogging: true
+      S3BucketName: !Ref CloudTrailBucket
+      TrailName: !Sub ${eventSourceBucket}-trail
+
+Outputs:
+  S3MD5HashStateMachineArn:
+    Description: Stock Trading State machine ARN
+    Value: !Ref S3MD5HashStateMachine
+  S3MD5HashStateMachineRoleArn:
+    Description: IAM Role created for the state machine based on the specified SAM Policy
+      Templates
+    Value: !GetAtt S3MD5HashStateMachineRole.Arn
