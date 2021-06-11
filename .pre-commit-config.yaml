@@ -23,7 +23,7 @@ repos:
       - id: mypy
         additional_dependencies:
           - aws-lambda-typing==1.0.3
-          - boto3-stubs[s3,sqs]==1.17.73
+          - boto3-stubs[s3,stepfunctions]==1.17.93
 
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.8.4
