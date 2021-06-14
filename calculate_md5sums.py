@@ -1,12 +1,12 @@
 import json
 from typing import TYPE_CHECKING, Iterator, Optional
 
-import boto3
-from boto3.session import Session
 import typer
+from boto3.session import Session
 
 if TYPE_CHECKING:
     from mypy_boto3_s3.client import S3Client
+    from mypy_boto3_stepfunctions.client import SFNClient
 
 app = typer.Typer()
 
@@ -18,15 +18,17 @@ def calculate_md5sums(
     prefix: Optional[str] = None,
     dry_run: bool = typer.Option(False, help="Only print the objects to update"),
     profile: str = "default",
+    region: str = "us-west-2",
 ) -> None:
-    session = Session(profile_name=profile)
+    session = Session(profile_name=profile, region_name=region)
     s3_client = session.client("s3")
     for key in list_objects(s3_client, bucket, prefix):
         if object_should_be_updated(s3_client, bucket, key):
             if dry_run:
                 print(key)
             else:
-                trigger_state_machine(state_machine_arn, bucket, key)
+                sfn_client = session.client("stepfunctions")
+                trigger_state_machine(sfn_client, state_machine_arn, bucket, key)
 
 
 def object_should_be_updated(client: "S3Client", bucket: str, key: str) -> bool:
@@ -37,14 +39,20 @@ def object_should_be_updated(client: "S3Client", bucket: str, key: str) -> bool:
     return True
 
 
-def trigger_state_machine(state_machine_arn: str, bucket: str, key: str) -> None:
-    client = boto3.client("stepfunctions")
+def trigger_state_machine(
+    client: "SFNClient", state_machine_arn: str, bucket: str, key: str
+) -> None:
     client.start_execution(
         stateMachineArn=state_machine_arn,
         input=json.dumps(
             {
                 "detail": {
-                    "resources": [{"type": "AWS::S3::Object", "ARN": f"{bucket}/{key}"}]
+                    "resources": [
+                        {
+                            "type": "AWS::S3::Object",
+                            "ARN": f"arn:aws:s3:::{bucket}/{key}",
+                        }
+                    ]
                 }
             }
         ),

@@ -1,5 +1,19 @@
 version = 0.1
 
+[default]
+
+[default.deploy]
+
+[default.deploy.parameters]
+stack_name = "s3-md5-hash"
+s3_bucket = "aws-sam-cli-managed-default-samclisourcebucket-20juh9o5jcwv"
+s3_prefix = "s3-md5-hash"
+region = "us-west-2"
+confirm_changeset = true
+capabilities = "CAPABILITY_IAM"
+parameter_overrides = "eventSourceBucket=\"encode-processing-v060921\""
+profile = "encode-test"
+
 [test]
 
 [test.deploy]
